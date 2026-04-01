@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Naturvetenskap – Jeopardy</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: system-ui, -apple-system, sans-serif;
+    background: #1a2744;
+    color: #1a2744;
+    min-height: 100vh;
+    padding: 1.5rem 1rem;
+  }
+
+  #app {
+    max-width: 760px;
+    margin: 0 auto;
+  }
+
+  .page-title {
+    text-align: center;
+    font-size: 28px;
+    font-weight: 700;
+    color: #f0c040;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.25rem;
+    text-shadow: 0 1px 0 #a07010;
+  }
+  .page-sub {
+    text-align: center;
+    font-size: 13px;
+    color: #8899bb;
+    margin-bottom: 1.25rem;
+  }
+
+  .teams-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 1.25rem;
+  }
+  .team {
+    flex: 1;
+    background: #243060;
+    border: 2px solid #3a4880;
+    border-radius: 10px;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    text-align: center;
+  }
+  .team:hover { border-color: #6080c0; }
+  .team.active { border-color: #f0c040; background: #2a3870; }
+  .team-name { font-size: 14px; font-weight: 600; color: #d0daf0; margin-bottom: 2px; }
+  .team-score { font-size: 22px; font-weight: 700; color: #f0c040; }
+  .team.active .team-name { color: #f0c040; }
+
+  .board {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 6px;
+    margin-bottom: 1.25rem;
+  }
+
+  .cat-header {
+    background: #1e3a8a;
+    border-radius: 8px;
+    padding: 10px 6px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: #a0c0ff;
+    min-height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1.3;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .cell {
+    background: #1e3a8a;
+    border-radius: 8px;
+    padding: 10px 6px;
+    text-align: center;
+    font-size: 22px;
+    font-weight: 700;
+    color: #f0c040;
+    cursor: pointer;
+    min-height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, transform 0.1s;
+    text-shadow: 0 1px 0 #a07010;
+    border: 2px solid transparent;
+  }
+  .cell:hover { background: #2a4aaa; border-color: #f0c040; transform: scale(1.03); }
+  .cell.used {
+    background: #141e38;
+    color: transparent;
+    cursor: default;
+    pointer-events: none;
+    border-color: transparent;
+    transform: none;
+  }
+
+  .modal-bg {
+    background: #0e1a38;
+    border: 2px solid #3a4880;
+    border-radius: 14px;
+    padding: 1.75rem;
+    margin-bottom: 1rem;
+    position: relative;
+    min-height: 280px;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .modal-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .modal-cat {
+    font-size: 11px;
+    font-weight: 700;
+    color: #a0c0ff;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .modal-pts {
+    font-size: 20px;
+    font-weight: 700;
+    color: #f0c040;
+  }
+
+  .modal-q {
+    font-size: 20px;
+    font-weight: 600;
+    color: #e8eef8;
+    line-height: 1.45;
+    flex: 1;
+    display: flex;
+    align-items: center;
+  }
+
+  .modal-ans {
+    background: #1a2a50;
+    border: 1.5px solid #1d9e75;
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+  }
+  .ans-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #4ecf9e;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+  }
+  .ans-text {
+    font-size: 17px;
+    font-weight: 500;
+    color: #d0f0e0;
+    line-height: 1.5;
+  }
+
+  .score-flash {
+    position: absolute;
+    top: 1rem;
+    right: 1.5rem;
+    font-size: 28px;
+    font-weight: 700;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+  }
+  .score-flash.show { opacity: 1; }
+  .score-flash.pos { color: #4ecf9e; }
+  .score-flash.neg { color: #ff6060; }
+
+  .btn-row {
+    display: flex;
+    gap: 8px;
+  }
+  .btn-row button {
+    flex: 1;
+    padding: 12px;
+    border-radius: 8px;
+    border: none;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+  }
+  .btn-row button:active { transform: scale(0.97); }
+  .btn-show { background: #3a4880; color: #d0daf0; }
+  .btn-show:hover { background: #4a58a0; }
+  .btn-correct { background: #1d9e75; color: white; }
+  .btn-correct:hover { background: #16806080; }
+  .btn-wrong { background: #c0392b; color: white; }
+  .btn-wrong:hover { background: #a0301f; }
+  .btn-skip { background: #243060; color: #8899bb; }
+  .btn-skip:hover { background: #2a3870; }
+
+  .winner-box {
+    text-align: center;
+    background: #0e1a38;
+    border: 2px solid #f0c040;
+    border-radius: 14px;
+    padding: 2.5rem 1.5rem;
+  }
+  .winner-star { font-size: 48px; margin-bottom: 0.5rem; color: #f0c040; }
+  .winner-title { font-size: 26px; font-weight: 700; color: #f0c040; margin-bottom: 8px; }
+  .winner-scores { font-size: 15px; color: #8899bb; margin-bottom: 1.5rem; line-height: 1.8; }
+  .btn-restart {
+    background: #f0c040;
+    color: #1a2744;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 32px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .btn-restart:hover { opacity: 0.85; }
+
+  .instructions {
+    text-align: center;
+    font-size: 12px;
+    color: #4a5880;
+    margin-top: 0.75rem;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="page-title">NATURVETENSKAP</div>
+  <div class="page-sub">Klicka på ett lag för att välja vem som svarar · Öppna en ruta · Visa svar · Ge poäng</div>
+
+  <div class="teams-row" id="teams"></div>
+  <div class="board" id="board"></div>
+  <div id="modal"></div>
+  <div class="instructions">Rätt svar = full poäng &nbsp;·&nbsp; Fel svar = minus halva poänget</div>
+</div>
+
+<script>
+const CATS = [
+  {
+    name: "Materia & atomer",
+    qs: [
+      { q: "Vad kallas det minsta byggstenen i ett grundämne?", a: "En atom" },
+      { q: "Vad heter ett ämne som består av två eller flera atomer ihopkopplade?", a: "En molekyl" },
+      { q: "Vad kallas det när atomer ordnas om och bildar nya ämnen med nya egenskaper?", a: "En kemisk reaktion" },
+      { q: "Hur många grundämnen finns det ungefär i det periodiska systemet?", a: "118 grundämnen" },
+    ]
+  },
+  {
+    name: "Kemi i naturen",
+    qs: [
+      { q: "Vilka tre saker behöver en växt för att utföra fotosyntes?", a: "Koldioxid (CO₂), vatten (H₂O) och solljus" },
+      { q: "Vilket ämne frigörs ut i luften som biprodukt vid fotosyntes?", a: "Syre (O₂)" },
+      { q: "Vad kallas den process där celler bryter ner socker med syre för att frigöra energi?", a: "Cellandning" },
+      { q: "Vilket ämne bildas alltid vid förbränning av ett kolhaltigt bränsle?", a: "Koldioxid (CO₂)" },
+    ]
+  },
+  {
+    name: "Kropp & hälsa",
+    qs: [
+      { q: "Vad kallas det organ som pumpar blodet runt i kroppen?", a: "Hjärtat" },
+      { q: "Vilket organ renar blodet från avfallsprodukter och bildar urin?", a: "Njurarna" },
+      { q: "Vad heter de celler i blodet som transporterar syre runt i kroppen?", a: "Röda blodkroppar" },
+      { q: "Vilket vitamin bildas i huden när vi exponeras för solljus?", a: "Vitamin D" },
+    ]
+  },
+  {
+    name: "Fysik & energi",
+    qs: [
+      { q: "Vad kallas energin ett föremål har tack vare sin rörelse?", a: "Rörelseenergi (kinetisk energi)" },
+      { q: "Vilken enhet mäter elektrisk effekt?", a: "Watt (W)" },
+      { q: "Vad kallas det fenomen där ljus böjs när det passerar från ett medium till ett annat?", a: "Refraktion (ljusbrytning)" },
+      { q: "Vad är absolutnollpunkten i grader Celsius?", a: "−273 °C" },
+    ]
+  },
+  {
+    name: "Klimat & miljö",
+    qs: [
+      { q: "Vad kallas det fenomen där atmosfären fångar värme och håller jordens yta varm?", a: "Växthuseffekten" },
+      { q: "Vilket grundämne är kärnan i alla organiska föreningar och kolets kretslopp?", a: "Kol (C)" },
+      { q: "Vad kallas bränslen som bildats av döda organismer under miljontals år?", a: "Fossila bränslen (kol, olja, naturgas)" },
+      { q: "Vad är den viktigaste skillnaden mellan förnybar och icke-förnybar energi?", a: "Förnybar energi (sol, vind, vatten) förnyas naturligt och tar inte slut. Icke-förnybar energi (olja, kol) är ändlig." },
+    ]
+  },
+];
+
+const PTS = [100, 200, 300, 400];
+const TEAM_NAMES = ["Lag 1", "Lag 2", "Lag 3"];
+
+let scores = [0, 0, 0];
+let activeTeam = 0;
+let used = Array.from({length: 5}, () => Array(4).fill(false));
+let currentQ = null;
+let answerShown = false;
+
+function renderTeams() {
+  const el = document.getElementById('teams');
+  el.innerHTML = '';
+  scores.forEach((s, i) => {
+    const div = document.createElement('div');
+    div.className = 'team' + (i === activeTeam ? ' active' : '');
+    div.innerHTML = `<div class="team-name">${TEAM_NAMES[i]}</div><div class="team-score">${s}</div>`;
+    div.onclick = () => { activeTeam = i; renderTeams(); };
+    el.appendChild(div);
+  });
+}
+
+function renderBoard() {
+  const el = document.getElementById('board');
+  let html = '';
+  CATS.forEach(cat => {
+    html += `<div class="cat-header">${cat.name}</div>`;
+  });
+  PTS.forEach((pts, row) => {
+    CATS.forEach((cat, col) => {
+      const isUsed = used[col][row];
+      html += `<div class="cell${isUsed ? ' used' : ''}" onclick="openQ(${col},${row})">${isUsed ? '' : pts}</div>`;
+    });
+  });
+  el.innerHTML = html;
+}
+
+function openQ(col, row) {
+  if (used[col][row]) return;
+  currentQ = { col, row, pts: PTS[row], cat: CATS[col].name, q: CATS[col].qs[row].q, a: CATS[col].qs[row].a };
+  answerShown = false;
+  renderModal();
+}
+
+function renderModal() {
+  const el = document.getElementById('modal');
+  if (!currentQ) { el.innerHTML = ''; return; }
+  el.innerHTML = `
+    <div class="modal-bg">
+      <div class="modal-top">
+        <span class="modal-cat">${currentQ.cat}</span>
+        <span class="modal-pts">${currentQ.pts} p</span>
+      </div>
+      <div class="modal-q">${currentQ.q}</div>
+      ${answerShown ? `
+        <div class="modal-ans">
+          <div class="ans-label">Svar</div>
+          <div class="ans-text">${currentQ.a}</div>
+        </div>` : ''}
+      <div class="score-flash" id="flash"></div>
+      <div class="btn-row">
+        ${!answerShown
+          ? `<button class="btn-show" onclick="showAnswer()">Visa svar</button>
+             <button class="btn-skip" onclick="closeModal()">Hoppa över</button>`
+          : `<button class="btn-correct" onclick="givePoints(true)">Rätt  +${currentQ.pts}</button>
+             <button class="btn-wrong"   onclick="givePoints(false)">Fel  −${Math.round(currentQ.pts / 2)}</button>
+             <button class="btn-skip"    onclick="closeModal()">Stäng</button>`
+        }
+      </div>
+    </div>`;
+}
+
+function showAnswer() {
+  answerShown = true;
+  renderModal();
+}
+
+function givePoints(correct) {
+  const pts = correct ? currentQ.pts : -Math.round(currentQ.pts / 2);
+  scores[activeTeam] = Math.max(0, scores[activeTeam] + pts);
+  used[currentQ.col][currentQ.row] = true;
+
+  const flash = document.getElementById('flash');
+  if (flash) {
+    flash.textContent = (pts > 0 ? '+' : '') + pts;
+    flash.className = 'score-flash show ' + (pts > 0 ? 'pos' : 'neg');
+    setTimeout(() => { flash.className = 'score-flash'; }, 900);
+  }
+
+  setTimeout(() => {
+    currentQ = null;
+    renderTeams();
+    renderBoard();
+    renderModal();
+    checkWin();
+  }, 700);
+}
+
+function closeModal() {
+  if (currentQ) used[currentQ.col][currentQ.row] = true;
+  currentQ = null;
+  renderBoard();
+  renderModal();
+  checkWin();
+}
+
+function checkWin() {
+  const allUsed = used.every(col => col.every(v => v));
+  if (!allUsed) return;
+  const max = Math.max(...scores);
+  const winners = TEAM_NAMES.filter((_, i) => scores[i] === max);
+  document.getElementById('modal').innerHTML = `
+    <div class="winner-box">
+      <div class="winner-star">★</div>
+      <div class="winner-title">${winners.join(' & ')} vinner!</div>
+      <div class="winner-scores">
+        ${scores.map((s, i) => `${TEAM_NAMES[i]}: ${s} poäng`).join('<br>')}
+      </div>
+      <button class="btn-restart" onclick="resetGame()">Spela igen</button>
+    </div>`;
+}
+
+function resetGame() {
+  scores = [0, 0, 0];
+  activeTeam = 0;
+  used = Array.from({length: 5}, () => Array(4).fill(false));
+  currentQ = null;
+  answerShown = false;
+  renderTeams();
+  renderBoard();
+  renderModal();
+}
+
+renderTeams();
+renderBoard();
+</script>
+</body>
+</html>
